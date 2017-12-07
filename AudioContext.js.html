@@ -1,0 +1,68 @@
+<html>
+<head>
+  <title>AudioContext</title>
+  <script>
+    // https://jsfiddle.net/njb91z84/
+    // https://stackoverflow.com/questions/39200994/play-specific-frequency-with-javascript
+    tempo = 100;
+    notesBuffer = [];
+    notesFreq = {"C": 65.5, "C#": 69.25, "C♯": 69.25, "Db": 69.25, "D♭": 69.25,
+                 "D": 73.5, "D#": 77.75, "D♯": 77.75, "Eb": 77.75, "E♭": 77.75,
+                 "E": 82.5, "F": 87.25, "F#": 92.5, "F♯": 92.5, "Gb": 92.5, "G♭": 92.5,
+                 "G": 98, "G#": 103.75, "G♯": 103.75, "Ab": 103.75, "A♭": 103.75,
+                 "A": 110, "A#": 116.5, "A♯": 116.5, "Bb": 116.5, "B♭": 116.5,
+                 "B": 123.5
+                }
+
+    // create web audio api context
+    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playNote(note, octave) {
+      // create Oscillator node
+      frequency =  isNaN(note) ? notesFreq[note.toUpperCase()] : note;
+      frequency = frequency * ( (typeof(octave)=="undefined"||isNaN(octave)) ? 1 : octave );
+      var oscillator = audioCtx.createOscillator();
+      oscillator.type = 'square';
+      oscillator.frequency.value = frequency; // value in hertz
+      oscillator.connect(audioCtx.destination);
+      oscillator.start();
+      return oscillator;
+    }
+
+    function playNextNoteInBuffer(){
+      if (notesBuffer.length > 0){
+        n = notesBuffer.pop();
+        if ( typeof(n)=="string"||typeof(n)=="number" ) {
+          note = n;
+          octave = (isNaN(note) ? 4 : 1);
+          noteValue = 8;  // 1:wholeMote/semibreve; 4:quarterNote/crotchet
+        } else {
+          note = n[0];
+          octave = (n.length>1) ? n[1] : (isNaN(note) ? 4 : 1);
+          noteValue = (n.length>2) ? n[2] : 8;  // 1:wholeMote/semibreve; 4:quarterNote/crotchet
+        }
+        oscillator = playNote(note, octave);
+        setTimeout(function(){
+          oscillator.stop();
+          playNextNoteInBuffer();
+        }, 1000*256/(noteValue*tempo));
+      }
+    }
+
+    function playMelody() {
+      tempo = 100;
+      notesBuffer = [
+         //[659, 4], [659, 4], [659, 4], [523, 8], [0, 16]
+         262, 277, 294, 311, 330, 349, 370, 392, 415, 440, 466, 494
+         //["C"], ["D"], ["E"], ["F"], ["G"]
+         //"C", "D", "E", "F", "G"
+       ];
+      notesBuffer.reverse();
+      playNextNoteInBuffer()
+    }
+  </script>
+</head>
+<body>
+  <input type=button value="playMelody" onclick="playMelody();">
+</body>
+</html>
